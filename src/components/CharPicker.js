@@ -18,11 +18,11 @@ const CharPicker = props => {
       })
       .then(charData => {
         const selectedCharacters = charData.results.slice(0, 5);
+        setIsLoading(false)
         setLoadedChars(selectedCharacters.map((char, index) => ({
           name: char.name,
           id: index + 1
-        }))
-        )
+        })))
       })
       .catch(err => {
         setIsLoading(false)
