@@ -1,61 +1,35 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 
+import { useHttp } from '../hooks/http';
 import Summary from './Summary';
 
 const Character = props => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadedCharacter, setLoadedCharacter] = useState({});
+  //custom hooks must be called at the top level inside the main component
+  //isLoading, fetchedData are returned by the useHttp hook
+  const [isLoading, fetchedData] = useHttp('https://swapi.co/api/people/' + props.selectedChar, [props.selectedChar])
 
-  console.log('checking shouldComponentUpdate... replaced by React.memo')
+  const loadedCharacter = fetchedData && {
+    id: props.selectedChar,
+    name: fetchedData.name,
+    height: fetchedData.height,
+    colors: {
+      hair: fetchedData.hair_color,
+      skin: fetchedData.skin_color
+    },
+    gender: fetchedData.gender,
+    movieCount: fetchedData.films.length
+  }
 
-  const fetchData = () => {
-    setIsLoading(true)
-    fetch('https://swapi.co/api/people/' + props.selectedChar)
-      .then(response => {
-        if (!response.ok) {
-          throw new Error('Could not fetch person!');
-        }
-        return response.json();
-      })
-      .then(charData => {
-        const loadedCharacter = {
-          id: props.selectedChar,
-          name: charData.name,
-          height: charData.height,
-          colors: {
-            hair: charData.hair_color,
-            skin: charData.skin_color
-          },
-          gender: charData.gender,
-          movieCount: charData.films.length
-        };
-        setIsLoading(false)
-        setLoadedCharacter(loadedCharacter)
-      })
-      .catch(err => {
-        setIsLoading(false);
-        console.log(err);
-      });
-  };
-
-  useEffect(() => {
-    console.log('fetching data')
-    fetchData();
-    return () => {
-      console.log('cleanup')
-    }
-  }, [props.selectedChar]) //it will run when props.selectedChar runs
-
-  useEffect(() => {
+  useEffect(() => { //used as comonenetDidUnmount
     return () => { //the returned function runs when the component unmounts
       console.log('component will unmount')
     }
   }, [])
 
-  let content = <p>Loading Character...</p>;
-
-  if (!isLoading && loadedCharacter.id) {
-    content = (
+  return (
+    isLoading
+      ? <p>Loading Character...</p>
+      : loadedCharacter &&
       <Summary
         name={loadedCharacter.name}
         gender={loadedCharacter.gender}
@@ -64,12 +38,7 @@ const Character = props => {
         skinColor={loadedCharacter.colors.skin}
         movieCount={loadedCharacter.movieCount}
       />
-    );
-  } else if (!isLoading && !loadedCharacter.id) {
-    content = <p>Failed to fetch character.</p>;
-  }
-  return content;
-
+  )
 }
 
 export default React.memo(Character, (prevProps, nextProps) => {
